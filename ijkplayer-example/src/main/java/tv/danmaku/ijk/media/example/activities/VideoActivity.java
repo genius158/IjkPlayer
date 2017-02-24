@@ -189,10 +189,7 @@ public class VideoActivity extends AppCompatActivity implements TracksFragment.I
             mMediaController.showOnce(mToastTextView);
             return true;
         } else if (id == R.id.action_toggle_player) {
-            int player = mVideoView.togglePlayer();
-            String playerText = IjkVideoView.getPlayerText(this, player);
-            mToastTextView.setText(playerText);
-            mMediaController.showOnce(mToastTextView);
+
             return true;
         } else if (id == R.id.action_toggle_render) {
 
