@@ -23,10 +23,10 @@ ext {
 
     targetSdkVersion = 23
 
-    versionCode = 501000
-    versionName = "0.5.1"
+    versionCode = 1
+    versionName = "0.1"
 }
 
 wrapper {
-    gradleVersion = '2.10'
+    gradleVersion = '2.14.1'
 }
