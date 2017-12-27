@@ -2,6 +2,7 @@ package com.yan.ijkplayertest;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.v4.util.ArrayMap;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -14,6 +15,8 @@ import com.yan.ijkplayertest.ijk.IJKOnInflateCallback;
 import com.yan.ijkplayertest.ijk.IJKVideoPlayer;
 import com.yan.ijkplayertest.ijk.IJKVideoRatio;
 
+import java.util.Map;
+
 /**
  * Created by yan on 2017/12/27 0027
  */
@@ -24,6 +27,8 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
     private IJKVideoPlayer ijkVideoPlayer;
     private TextView tvScale;
     private TextView tvRatio;
+
+    private ArrayMap<IJKVideoRatio, String> arrayMap;
 
     public ControlPanelView(@NonNull Context context) {
         super(context);
@@ -43,32 +48,25 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
             }
         });
 
-        final IJKVideoRatio[] viewRatios = new IJKVideoRatio[]{
-                IJKVideoRatio.RATIO_FILL
-                , IJKVideoRatio.RATIO_ADAPTER
-                , IJKVideoRatio.RATIO_16_9
-                , IJKVideoRatio.RATIO_4_3
-        };
-        final String[] strs = new String[]{
-                getResources().getString(R.string.ratio_full)
-                , getResources().getString(R.string.ratio_adapter)
-                , getResources().getString(R.string.ratio_16_9)
-                , getResources().getString(R.string.ratio_4_3)
-        };
+        arrayMap = new ArrayMap<>();
+        arrayMap.put(IJKVideoRatio.RATIO_FILL, getResources().getString(R.string.ratio_full));
+        arrayMap.put(IJKVideoRatio.RATIO_ADAPTER, getResources().getString(R.string.ratio_adapter));
+        arrayMap.put(IJKVideoRatio.RATIO_16_9, getResources().getString(R.string.ratio_16_9));
+        arrayMap.put(IJKVideoRatio.RATIO_4_3, getResources().getString(R.string.ratio_4_3));
         tvRatio = findViewById(R.id.tv_ratio);
         tvRatio.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 int index = 0;
-                for (int i = 0; i < viewRatios.length; i++) {
-                    if (ijkVideoPlayer.getIjkVideoRatio() == viewRatios[i]) {
-                        index = i;
+                for (Map.Entry<IJKVideoRatio, String> entry : arrayMap.entrySet()) {
+                    if (ijkVideoPlayer.getIjkVideoRatio() == entry.getKey()) {
                         break;
                     }
+                    index++;
                 }
-                index = (index + 1) % viewRatios.length;
-                ijkVideoPlayer.setIjkVideoRatio(viewRatios[index]);
-                tvRatio.setText(strs[index]);
+                index = (index + 1) % arrayMap.size();
+                ijkVideoPlayer.setIjkVideoRatio(arrayMap.keyAt(index));
+                tvRatio.setText(arrayMap.get(arrayMap.keyAt(index)));
             }
         });
     }
@@ -134,6 +132,8 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
         layoutParams.height = -2;
         layoutParams.width = -1;
         layoutParams.gravity = Gravity.BOTTOM;
+
+        tvRatio.callOnClick();
     }
 
     @Override
