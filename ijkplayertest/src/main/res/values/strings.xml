@@ -3,4 +3,10 @@
     <string name="next">next</string>
     <string name="all_screen">全屏</string>
     <string name="small_screen">小屏</string>
+
+    <string name="ratio_full">填充</string>
+    <string name="ratio_adapter">适应</string>
+    <string name="ratio_16_9">16_9</string>
+    <string name="ratio_4_3">4_3</string>
+
 </resources>

@@ -12,6 +12,7 @@ import android.widget.TextView;
 import com.yan.ijkplayertest.ijk.IJKOnConfigurationChanged;
 import com.yan.ijkplayertest.ijk.IJKOnInflateCallback;
 import com.yan.ijkplayertest.ijk.IJKVideoPlayer;
+import com.yan.ijkplayertest.ijk.IJKVideoRatio;
 
 /**
  * Created by yan on 2017/12/27 0027
@@ -21,6 +22,8 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
     private static final long DURING = 5000;
 
     private IJKVideoPlayer ijkVideoPlayer;
+    private TextView tvScale;
+    private TextView tvRatio;
 
     public ControlPanelView(@NonNull Context context) {
         super(context);
@@ -32,18 +35,50 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
             }
         });
 
-        final TextView tvScale = findViewById(R.id.tv_scale);
+        tvScale = findViewById(R.id.tv_scale);
         tvScale.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 ijkVideoPlayer.triggerOrientation();
-                if (ijkVideoPlayer.isScreenPortrait()) {
-                    tvScale.setText(R.string.small_screen);
-                } else {
-                    tvScale.setText(R.string.all_screen);
-                }
             }
         });
+
+        final IJKVideoRatio[] viewRatios = new IJKVideoRatio[]{
+                IJKVideoRatio.RATIO_FILL
+                , IJKVideoRatio.RATIO_ADAPTER
+                , IJKVideoRatio.RATIO_16_9
+                , IJKVideoRatio.RATIO_4_3
+        };
+        final String[] strs = new String[]{
+                getResources().getString(R.string.ratio_full)
+                , getResources().getString(R.string.ratio_adapter)
+                , getResources().getString(R.string.ratio_16_9)
+                , getResources().getString(R.string.ratio_4_3)
+        };
+        tvRatio = findViewById(R.id.tv_ratio);
+        tvRatio.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int index = 0;
+                for (int i = 0; i < viewRatios.length; i++) {
+                    if (ijkVideoPlayer.getIjkVideoRatio() == viewRatios[i]) {
+                        index = i;
+                        break;
+                    }
+                }
+                index = (index + 1) % viewRatios.length;
+                ijkVideoPlayer.setIjkVideoRatio(viewRatios[index]);
+                tvRatio.setText(strs[index]);
+            }
+        });
+    }
+
+    private void textFullSmall() {
+        if (ijkVideoPlayer.isScreenPortrait()) {
+            tvScale.setText(R.string.all_screen);
+        } else {
+            tvScale.setText(R.string.small_screen);
+        }
     }
 
     private void loadIJKPlayer(IJKVideoPlayer ijkVideoPlayer) {
@@ -66,7 +101,7 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
         }
     }
 
-    Runnable asynHide = new Runnable() {
+    private final Runnable asynHide = new Runnable() {
         @Override
         public void run() {
             setVisibility(GONE);
@@ -103,7 +138,7 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
 
     @Override
     public void onConfigurationChanged() {
-
+        textFullSmall();
     }
 
 }

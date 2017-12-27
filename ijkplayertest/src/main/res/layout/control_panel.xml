@@ -8,6 +8,21 @@
     android:orientation="horizontal">
 
     <TextView
+        android:id="@+id/tv_ratio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="@string/ratio_full"
+        android:textColor="#ffffff"
+        android:textSize="15sp" />
+
+    <View
+        android:layout_width="1px"
+        android:layout_height="15sp"
+        android:layout_gravity="center"
+        android:background="#afffffff" />
+
+    <TextView
         android:id="@+id/tv_next"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

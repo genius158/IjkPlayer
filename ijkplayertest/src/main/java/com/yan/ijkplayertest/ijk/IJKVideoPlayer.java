@@ -1,23 +1,26 @@
 package com.yan.ijkplayertest.ijk;
 
+import android.animation.ObjectAnimator;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.SurfaceTexture;
+import android.hardware.SensorManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 
 import com.yan.ijkplayertest.ControlPanelView;
@@ -32,6 +35,7 @@ import tv.danmaku.ijk.media.player.IjkMediaPlayer;
  */
 
 public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTextureListener, IJKOnConfigurationChanged
+        //--------------- kinds of ijk callback---------
         , IMediaPlayer.OnBufferingUpdateListener
         , IMediaPlayer.OnCompletionListener
         , IMediaPlayer.OnPreparedListener
@@ -48,14 +52,19 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
 
     private IJKOnConfigurationChanged ijkOnConfigurationChanged;
 
-    private int surfaceWidth;
-    private int surfaceHeight;
+    private int videoWidth;
+    private int videoHeight;
 
-    private float ratio = 16F / 9F;
+    private final float DEFAULT_SCREEN_RATIO = 16F / 9F;
+    private float screenRatio = DEFAULT_SCREEN_RATIO;
+    private IJKVideoRatio ijkVideoRatio = IJKVideoRatio.RATIO_FILL;
 
     private VideoPlayerListener listener;
 
-    private String videoPath = "";
+    private OrientationEventListener orientationListener;
+    private ObjectAnimator rotationAnimator;
+
+    private String videoPath;
 
     private Context context;
 
@@ -72,19 +81,17 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         final int width = MeasureSpec.getSize(widthMeasureSpec);
-        final int height = MeasureSpec.getSize(heightMeasureSpec);
+        super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec((int) (width / screenRatio + 0.5F), MeasureSpec.EXACTLY));
+    }
 
-        final int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-        if (heightMode == MeasureSpec.EXACTLY) {
-            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-            ratio = (float) width / height;
-            return;
-        }
-        super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec((int) (width / ratio + 0.5F), MeasureSpec.EXACTLY));
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        setSurfaceParam(videoWidth, videoHeight);
     }
 
     /**
-     * 创建一个新的ijkPlayer
+     * create a new ijkPlayer
      */
     private void createPlayer() {
         mediaRelease();
@@ -92,12 +99,11 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         IjkMediaPlayer ijkMediaPlayer = new IjkMediaPlayer();
         ijkMediaPlayer.native_setLogLevel(IjkMediaPlayer.IJK_LOG_DEBUG);
 
-        //开启硬解码
         ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 1);
+        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 1);
 
         mediaPlayer = ijkMediaPlayer;
         mediaPlayer.setSurface(surface);
-
         mediaPlayer.setOnPreparedListener(this);
         mediaPlayer.setOnInfoListener(this);
         mediaPlayer.setOnSeekCompleteListener(this);
@@ -106,8 +112,6 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     }
 
     private void createSurface() {
-        View panel = getChildAt(0);
-
         textureView = new TextureView(context);
         textureView.setSurfaceTextureListener(this);
         LayoutParams layoutParams = new LayoutParams(LayoutParams.MATCH_PARENT
@@ -115,8 +119,10 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         textureView.setLayoutParams(layoutParams);
         super.addView(textureView);
 
-        if (panel != null) {
-            panel.bringToFront();
+        for (int i = 0; i < getChildCount(); i++) {
+            if (getChildAt(i) != textureView) {
+                getChildAt(i).bringToFront();
+            }
         }
     }
 
@@ -146,19 +152,46 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         }
     }
 
-    private void setSurfaceParam(int width, int height) {
-        if (textureView == null || width == 0 || height == 0) {
+    private void setSurfaceParam(int videoWidth, int videoHeight) {
+        if (textureView == null || videoWidth == 0 || videoHeight == 0) {
             return;
         }
+        this.videoWidth = videoWidth;
+        this.videoHeight = videoHeight;
 
-        if (width > height * ratio) {
-            float times = (float) getWidth() / width;
-            surfaceWidth = getWidth();
-            surfaceHeight = (int) (height * times + 0.5F);
-        } else {
-            float times = (float) getHeight() / height;
-            surfaceHeight = getHeight();
-            surfaceWidth = (int) (width * times + 0.5F);
+        int surfaceWidth;
+        int surfaceHeight;
+
+        float fixedRatio = 0;
+        switch (ijkVideoRatio) {
+            case RATIO_16_9:
+                fixedRatio = 16F / 9F;
+            case RATIO_4_3:
+                if (fixedRatio == 0) {
+                    fixedRatio = 4F / 3F;
+                }
+                if (screenRatio > fixedRatio) {
+                    surfaceHeight = getMeasuredHeight();
+                    surfaceWidth = (int) (surfaceHeight * fixedRatio + 0.5F);
+                } else {
+                    surfaceWidth = getMeasuredWidth();
+                    surfaceHeight = (int) (surfaceWidth / fixedRatio + 0.5F);
+                }
+                break;
+            case RATIO_FILL:
+                surfaceWidth = getMeasuredWidth();
+                surfaceHeight = getMeasuredHeight();
+                break;
+            default://RATIO_ADAPTER
+                if (videoWidth > videoHeight * screenRatio) {
+                    float times = (float) getMeasuredWidth() / videoWidth;
+                    surfaceWidth = getMeasuredWidth();
+                    surfaceHeight = (int) (videoHeight * times + 0.5F);
+                } else {
+                    float times = (float) getMeasuredHeight() / videoHeight;
+                    surfaceHeight = getMeasuredHeight();
+                    surfaceWidth = (int) (videoWidth * times + 0.5F);
+                }
         }
 
         LayoutParams layoutParams = (LayoutParams) textureView.getLayoutParams();
@@ -194,51 +227,107 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
 
     @Override
     public void onConfigurationChanged() {
-        ViewGroup.LayoutParams layoutParams = getLayoutParams();
-        layoutParams.height = -1;
-        if (isScreenPortrait()) {
-            layoutParams.height = -2;
-            setLayoutParams(layoutParams);
-            toolBarShowTrigger(true);
-            notifyBarModeTrigger(false);
+        final boolean isScreenPortrait = isScreenPortrait();
+
+        screenRatioTrigger(isScreenPortrait);
+        toolBarShowTrigger(isScreenPortrait);
+        notifyBarModeTrigger(isScreenPortrait);
+        orientationListenerTrigger(isScreenPortrait);
+
+        //rotation listener set part
+        if (isScreenPortrait) {
+            resetSurfaceRotation();
         } else {
-            toolBarShowTrigger(false);
-            layoutParams.width = -1;
-            setLayoutParams(layoutParams);
-            notifyBarModeTrigger(true);
+            readyOrientationListener();
         }
+        orientationListenerTrigger(isScreenPortrait);
+
+        ViewGroup.LayoutParams layoutParams = getLayoutParams();
+        layoutParams.height = isScreenPortrait ? -2 : -1;
+        setLayoutParams(layoutParams);
+
         if (ijkOnConfigurationChanged != null) {
             ijkOnConfigurationChanged.onConfigurationChanged();
         }
 
-        // notify textureView reLayout
-        addOnLayoutChangeListener(new OnLayoutChangeListener() {
-            @Override
-            public void onLayoutChange(View v, int left, int top, int right
-                    , int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                setSurfaceParam(surfaceWidth, surfaceHeight);
-
-            }
-        });
     }
 
-    private void notifyBarModeTrigger(boolean isTrans) {
+    private void screenRatioTrigger(boolean isScreenPortrait) {
+        if (isScreenPortrait) {
+            screenRatio = DEFAULT_SCREEN_RATIO;
+        } else {
+            final int width = context.getResources().getDisplayMetrics().widthPixels;
+            final int height = context.getResources().getDisplayMetrics().heightPixels;
+            screenRatio = (float) width / height;
+        }
+    }
+
+    private void notifyBarModeTrigger(boolean isSmall) {
         if (getActivity() == null) {
             return;
         }
-        if (isTrans) {
-            //设置全屏
+        if (!isSmall) {
+            //fullScreen
             WindowManager.LayoutParams lp = getActivity().getWindow().getAttributes();
             lp.flags |= WindowManager.LayoutParams.FLAG_FULLSCREEN;
             getActivity().getWindow().setAttributes(lp);
             getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
         } else {
-            //取消全屏
+            //smallScreen
             WindowManager.LayoutParams attr = getActivity().getWindow().getAttributes();
             attr.flags &= (~WindowManager.LayoutParams.FLAG_FULLSCREEN);
             getActivity().getWindow().setAttributes(attr);
             getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
         }
+    }
+
+    private void readyOrientationListener() {
+        if (orientationListener == null) {
+            orientationListener = new OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
+                @Override
+                public void onOrientationChanged(int orientation) {
+                    surfaceRotation(orientation + 5);
+                }
+            };
+        }
+    }
+
+    private void orientationListenerTrigger(boolean disable) {
+        if (orientationListener != null) {
+            if (disable) {
+                orientationListener.disable();
+                return;
+            }
+            if (isScreenPortrait()) {
+                orientationListener.disable();
+            } else {
+                orientationListener.enable();
+            }
+        }
+    }
+
+    private void surfaceRotation(int orientation) {
+        if ((rotationAnimator != null && rotationAnimator.isRunning()) || textureView == null || orientation == -1) {
+            return;
+        }
+        final int orientationFlag = 27 - orientation / 10;
+        if ((orientationFlag == 0 || orientationFlag == 18) && getRotation() != orientationFlag * 10) {
+            if (rotationAnimator == null) {
+                rotationAnimator = ObjectAnimator.ofFloat(this, "rotation", getRotation(), orientationFlag * 10);
+                rotationAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+                rotationAnimator.setDuration(250);
+            } else {
+                rotationAnimator.setFloatValues(getRotation(), orientationFlag * 10);
+            }
+            rotationAnimator.start();
+        }
+    }
+
+    private void resetSurfaceRotation() {
+        if (rotationAnimator != null && rotationAnimator.isRunning()) {
+            rotationAnimator.cancel();
+        }
+        setRotation(0);
     }
 
     private Activity getActivity() {
@@ -248,14 +337,15 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         return null;
     }
 
+
     // --------------------------- api -------------------------
 
     /**
      * @param path the path of the video.
      */
     public void setVideoPath(String path) {
-        if (TextUtils.equals("", videoPath)) {
-            //第一次播放
+        if (videoPath == null) {
+            //first play
             videoPath = path;
             createSurface();
         } else {
@@ -266,6 +356,11 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
 
     public void setListener(VideoPlayerListener listener) {
         this.listener = listener;
+    }
+
+    public void setIjkVideoRatio(IJKVideoRatio ijkVideoRatio) {
+        this.ijkVideoRatio = ijkVideoRatio;
+        setSurfaceParam(videoWidth, videoHeight);
     }
 
     @Override
@@ -348,6 +443,10 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         }
     }
 
+    public IJKVideoRatio getIjkVideoRatio() {
+        return ijkVideoRatio;
+    }
+
     public void seekTo(long l) {
         if (mediaPlayer != null) {
             mediaPlayer.seekTo(l);
@@ -360,6 +459,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
         Log.e(TAG, "onSurfaceTextureAvailable: ");
         surface = new Surface(surfaceTexture);
+        orientationListenerTrigger(true);
         loadVideo();
     }
 
@@ -372,6 +472,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
         Log.e(TAG, "onSurfaceTextureDestroyed: ");
         mediaRelease();
+        orientationListenerTrigger(false);
         return true;
     }
 
@@ -409,7 +510,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
 
     @Override
     public boolean onInfo(IMediaPlayer iMediaPlayer, int what, int extra) {
-        Log.e(TAG, "onInfo: ");
+        Log.e(TAG, "onInfo: " + what);
         if (listener != null) {
             return listener.onInfo(iMediaPlayer, what, extra);
         }
