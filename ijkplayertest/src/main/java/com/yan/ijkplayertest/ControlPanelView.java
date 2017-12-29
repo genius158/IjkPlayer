@@ -45,7 +45,8 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
             public void onClick(View v) {
                 for (int i = 0; i < urls.length; i++) {
                     if (urls[i].equals(currentUrl)) {
-                        ijkVideoPlayer.setVideoPath(urls[++i % urls.length]);
+                        ijkVideoPlayer.setVideoPath(currentUrl = urls[++i % urls.length]);
+                        break;
                     }
                 }
             }
