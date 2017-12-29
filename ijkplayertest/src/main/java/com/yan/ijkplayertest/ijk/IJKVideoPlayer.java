@@ -37,7 +37,7 @@ import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTextureListener, IJKOnConfigurationChanged, IJKCallbacks {
     private static final String TAG = "IJKVideoPlayer";
 
-    private IMediaPlayer mediaPlayer = null;
+    private IMediaPlayer mediaPlayer;
 
     private TextureView textureView;
     private Surface surface;
