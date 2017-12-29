@@ -139,6 +139,28 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
         showPanel(isShow, 0);
     }
 
+    private void playPauseTrigger(boolean trigger) {
+        if (trigger) {
+            playTrigger();
+        } else {
+            showPanel(llControl.getVisibility() != VISIBLE);
+        }
+    }
+
+    private void onPanelControl(int touchStatus, float percent, boolean commit) {
+        switch (touchStatus) {
+            case 1://进度
+                Log.e("onPanelControl", "onPanelControl:进度 " + percent + "   " + commit);
+                break;
+            case 2://亮度
+                Log.e("onPanelControl", "onPanelControl:亮度 " + percent + "   " + commit);
+                break;
+            case 3://声音
+                Log.e("onPanelControl", "onPanelControl:声音 " + percent + "   " + commit);
+                break;
+        }
+    }
+
     private final IJKCallbacksAdapter ijkCallbacksAdapter = new IJKCallbacksAdapter() {
         @Override
         public boolean onInfo(IMediaPlayer iMediaPlayer, int i, int i1) {
@@ -189,8 +211,8 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
     private long lastTime;
 
     private PointF lastTouchPoint = new PointF();
-    private int touchMoveDistance;
-    private int touchStatus = 0; //1 horizontal , 2 vertical
+    private int touchStatus; // 1:进度 2:亮度 3:声音
+    private float percent; // 1:进度 2:亮度 3:声音
     private boolean breakTouchMoving;
 
     @Override
@@ -209,11 +231,13 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
                 }
 
                 if (touchStatus != 0) {
+
                     if (touchStatus == 1) {
-                        touchMoveDistance = (int) (event.getX() - lastTouchPoint.x + 0.5F);
+                        percent = ((event.getX() - lastTouchPoint.x + 0.5F)) / getWidth();
                     } else {
-                        touchMoveDistance = (int) (event.getY() - lastTouchPoint.y + 0.5F);
+                        percent = (lastTouchPoint.y - event.getY() + 0.5F) / getHeight();
                     }
+                    onPanelControl(touchStatus, percent, false);
                     break;
                 }
                 if (Math.sqrt((event.getX() - lastTouchPoint.x) * (event.getX() - lastTouchPoint.x) + (event.getY() - lastTouchPoint.y) * (event.getY() - lastTouchPoint.y)) > edgeSlop) {
@@ -223,7 +247,13 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
                     if (Math.abs(event.getX() - lastTouchPoint.x) > Math.abs(event.getY() - lastTouchPoint.y)) {
                         touchStatus = 1;
                     } else {
-                        touchStatus = 2;
+                        if (event.getX() < getWidth() / 3) {
+                            touchStatus = 2;
+                        } else if (event.getX() > getWidth() * 2 / 3) {
+                            touchStatus = 3;
+                        } else {
+                            touchStatus = 1;
+                        }
                     }
                     lastTouchPoint.set(event.getX(), event.getY());
                 }
@@ -232,22 +262,14 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
                 breakTouchMoving = true;
                 break;
             case MotionEvent.ACTION_UP:
-                if (touchStatus == 1) {
-                    Log.e("MotionEvent1", "onTouchEvent: " + ((float) touchMoveDistance / getWidth()));
-                } else {
-                    Log.e("MotionEvent2", "onTouchEvent: " + ((float) touchMoveDistance / getHeight()));
-                }
-
             case MotionEvent.ACTION_CANCEL:
-                if (System.currentTimeMillis() - lastTime < TOUCH_DURING) {
-                    playTrigger();
-                } else {
-                    showPanel(llControl.getVisibility() != VISIBLE);
-                }
-                lastTime = System.currentTimeMillis();
+                onPanelControl(touchStatus, percent, touchStatus != 0);
 
                 breakTouchMoving = false;
                 touchStatus = 0;
+
+                playPauseTrigger(System.currentTimeMillis() - lastTime < TOUCH_DURING);
+                lastTime = System.currentTimeMillis();
                 break;
         }
 
