@@ -34,15 +34,7 @@ import tv.danmaku.ijk.media.player.IjkMediaPlayer;
  * Created by yan on 2017/12/27 0027
  */
 
-public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTextureListener, IJKOnConfigurationChanged
-        //--------------- kinds of ijk callback---------
-        , IMediaPlayer.OnBufferingUpdateListener
-        , IMediaPlayer.OnCompletionListener
-        , IMediaPlayer.OnPreparedListener
-        , IMediaPlayer.OnInfoListener
-        , IMediaPlayer.OnVideoSizeChangedListener
-        , IMediaPlayer.OnErrorListener
-        , IMediaPlayer.OnSeekCompleteListener {
+public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTextureListener, IJKOnConfigurationChanged, IJKCallbacks {
     private static final String TAG = "IJKVideoPlayer";
 
     private IMediaPlayer mediaPlayer = null;
@@ -59,7 +51,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     private float screenRatio = DEFAULT_SCREEN_RATIO;
     private IJKVideoRatio ijkVideoRatio = IJKVideoRatio.RATIO_FILL;
 
-    private IJKVideoPlayerListener listener;
+    private IJKCallbacksAdapter listener;
 
     private OrientationEventListener orientationListener;
     private ObjectAnimator rotationAnimator;
@@ -353,7 +345,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         }
     }
 
-    public void setListener(IJKVideoPlayerListener listener) {
+    public void setListener(IJKCallbacksAdapter listener) {
         this.listener = listener;
     }
 
