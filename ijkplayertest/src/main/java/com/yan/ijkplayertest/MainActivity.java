@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ijkVideoPlayer = findViewById(R.id.ijk_player);
         ijkVideoPlayer.attachPanel(new ControlPanelView(this));
-        ijkVideoPlayer.setVideoPath("http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8");
+        ijkVideoPlayer.setVideoPath("http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_16x9/gear3/prog_index.m3u8");
 
         RecyclerView recyclerView = findViewById(R.id.rv);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));

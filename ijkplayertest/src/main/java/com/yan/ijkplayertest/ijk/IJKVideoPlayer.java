@@ -59,7 +59,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     private float screenRatio = DEFAULT_SCREEN_RATIO;
     private IJKVideoRatio ijkVideoRatio = IJKVideoRatio.RATIO_FILL;
 
-    private VideoPlayerListener listener;
+    private IJKVideoPlayerListener listener;
 
     private OrientationEventListener orientationListener;
     private ObjectAnimator rotationAnimator;
@@ -232,7 +232,6 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         screenRatioTrigger(isScreenPortrait);
         toolBarShowTrigger(isScreenPortrait);
         notifyBarModeTrigger(isScreenPortrait);
-        orientationListenerTrigger(isScreenPortrait);
 
         //rotation listener set part
         if (isScreenPortrait) {
@@ -354,7 +353,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         }
     }
 
-    public void setListener(VideoPlayerListener listener) {
+    public void setListener(IJKVideoPlayerListener listener) {
         this.listener = listener;
     }
 
@@ -459,7 +458,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
         Log.e(TAG, "onSurfaceTextureAvailable: ");
         surface = new Surface(surfaceTexture);
-        orientationListenerTrigger(true);
+        orientationListenerTrigger(false);
         loadVideo();
     }
 
@@ -472,7 +471,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
         Log.e(TAG, "onSurfaceTextureDestroyed: ");
         mediaRelease();
-        orientationListenerTrigger(false);
+        orientationListenerTrigger(true);
         return true;
     }
 
