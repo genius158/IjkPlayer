@@ -26,16 +26,15 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
             "http://183.252.176.25//PLTV/88888888/224/3221225925/index.m3u8"
             , "http://183.252.176.51//PLTV/88888888/224/3221225926/index.m3u8"
     };
-
     private String currentUrl = urls[0];
+
+    private final ArrayMap<IJKVideoRatio, String> arrayMap;
 
     private static final long DURING = 5000;
 
     private IJKVideoPlayer ijkVideoPlayer;
     private TextView tvScale;
     private TextView tvRatio;
-
-    private ArrayMap<IJKVideoRatio, String> arrayMap;
 
     public ControlPanelView(@NonNull Context context) {
         super(context);
