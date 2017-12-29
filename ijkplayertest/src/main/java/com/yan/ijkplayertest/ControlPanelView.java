@@ -202,7 +202,7 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
         }
     }
 
-    private void onPanelControl(int touchStatus, float percentOffset, boolean commit) {
+    private void onPanelControl(int touchStatus, float percentOffset, boolean actionUp) {
         switch (touchStatus) {
             case 1://进度
                 break;
@@ -210,7 +210,7 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
                 setLight(percentOffset);
                 break;
             case 3://声音
-                setVoice(percentOffset, commit);
+                setVoice(percentOffset, actionUp);
                 break;
         }
     }
