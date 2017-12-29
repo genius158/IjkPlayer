@@ -1,49 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="#8e000000"
-    android:clickable="true"
-    android:gravity="right"
-    android:orientation="horizontal">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/tv_ratio"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/ll_control"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="10dp"
-        android:text="@string/ratio_full"
-        android:textColor="#ffffff"
-        android:textSize="15sp" />
+        android:layout_gravity="bottom"
+        android:background="#8e000000"
+        android:clickable="true"
+        android:gravity="end"
+        android:orientation="horizontal">
 
-    <View
-        android:layout_width="1px"
-        android:layout_height="15sp"
-        android:layout_gravity="center"
-        android:background="#afffffff" />
+        <TextView
+            android:id="@+id/tv_ratio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="@string/ratio_full"
+            android:textColor="#ffffff"
+            android:textSize="15sp" />
 
-    <TextView
-        android:id="@+id/tv_next"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="10dp"
-        android:text="@string/next"
-        android:textColor="#ffffff"
-        android:textSize="15sp" />
+        <View
+            android:layout_width="1px"
+            android:layout_height="15sp"
+            android:layout_gravity="center"
+            android:background="#afffffff" />
 
-    <View
-        android:layout_width="1px"
-        android:layout_height="15sp"
-        android:layout_gravity="center"
-        android:background="#afffffff" />
+        <TextView
+            android:id="@+id/tv_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="@string/next"
+            android:textColor="#ffffff"
+            android:textSize="15sp" />
 
-    <TextView
-        android:id="@+id/tv_scale"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="10dp"
-        android:text="@string/all_screen"
-        android:textColor="#ffffff"
-        android:textSize="15sp" />
+        <View
+            android:layout_width="1px"
+            android:layout_height="15sp"
+            android:layout_gravity="center"
+            android:background="#afffffff" />
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/tv_scale"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="@string/all_screen"
+            android:textColor="#ffffff"
+            android:textSize="15sp" />
+
+    </LinearLayout>
+</FrameLayout>

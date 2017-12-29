@@ -434,16 +434,22 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         }
     }
 
-    public IJKVideoRatio getIjkVideoRatio() {
-        return ijkVideoRatio;
-    }
-
     public void seekTo(long l) {
         if (mediaPlayer != null) {
             mediaPlayer.seekTo(l);
         }
     }
 
+    public boolean isPlaying() {
+        if (mediaPlayer != null) {
+            return mediaPlayer.isPlaying();
+        }
+        return false;
+    }
+
+    public IJKVideoRatio getIjkVideoRatio() {
+        return ijkVideoRatio;
+    }
 
     //---------------------- textureView callbacks -------------------------
     @Override
@@ -502,49 +508,48 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     @Override
     public boolean onInfo(IMediaPlayer iMediaPlayer, int what, int extra) {
         Log.e(TAG, "onInfo: " + what);
-        if (listener != null) {
-            return listener.onInfo(iMediaPlayer, what, extra);
-        }
 
         switch (what) {
             case IMediaPlayer.MEDIA_INFO_VIDEO_TRACK_LAGGING:
-                Log.d(TAG, "MEDIA_INFO_VIDEO_TRACK_LAGGING:");
+                Log.e(TAG, "media_info_video_track_lagging:");
                 break;
             case IMediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
-                Log.d(TAG, "MEDIA_INFO_VIDEO_RENDERING_START:");
+                Log.e(TAG, "media_info_video_rendering_start:");
                 break;
             case IMediaPlayer.MEDIA_INFO_BUFFERING_START:
-                Log.d(TAG, "MEDIA_INFO_BUFFERING_START:");
+                Log.e(TAG, "media_info_buffering_start:");
                 break;
             case IMediaPlayer.MEDIA_INFO_BUFFERING_END:
-                Log.d(TAG, "MEDIA_INFO_BUFFERING_END:");
+                Log.e(TAG, "media_info_buffering_end:");
                 break;
             case IMediaPlayer.MEDIA_INFO_NETWORK_BANDWIDTH:
-                Log.d(TAG, "MEDIA_INFO_NETWORK_BANDWIDTH: " + extra);
+                Log.e(TAG, "media_info_network_bandwidth: " + extra);
                 break;
             case IMediaPlayer.MEDIA_INFO_BAD_INTERLEAVING:
-                Log.d(TAG, "MEDIA_INFO_BAD_INTERLEAVING:");
+                Log.e(TAG, "media_info_bad_interleaving:");
                 break;
             case IMediaPlayer.MEDIA_INFO_NOT_SEEKABLE:
-                Log.d(TAG, "MEDIA_INFO_NOT_SEEKABLE:");
+                Log.e(TAG, "media_info_not_seekable:");
                 break;
             case IMediaPlayer.MEDIA_INFO_METADATA_UPDATE:
-                Log.d(TAG, "MEDIA_INFO_METADATA_UPDATE:");
+                Log.e(TAG, "media_info_metadata_update:");
                 break;
             case IMediaPlayer.MEDIA_INFO_UNSUPPORTED_SUBTITLE:
-                Log.d(TAG, "MEDIA_INFO_UNSUPPORTED_SUBTITLE:");
+                Log.e(TAG, "media_info_unsupported_subtitle:");
                 break;
             case IMediaPlayer.MEDIA_INFO_SUBTITLE_TIMED_OUT:
-                Log.d(TAG, "MEDIA_INFO_SUBTITLE_TIMED_OUT:");
+                Log.e(TAG, "media_info_subtitle_timed_out:");
                 break;
             case IMediaPlayer.MEDIA_INFO_VIDEO_ROTATION_CHANGED:
-                Log.d(TAG, "MEDIA_INFO_VIDEO_ROTATION_CHANGED: " + extra);
+                Log.e(TAG, "media_info_video_rotation_changed: " + extra);
                 break;
             case IMediaPlayer.MEDIA_INFO_AUDIO_RENDERING_START:
-                Log.d(TAG, "MEDIA_INFO_AUDIO_RENDERING_START:");
+                Log.e(TAG, "media_info_audio_rendering_start:");
                 break;
         }
-
+        if (listener != null) {
+            return listener.onInfo(iMediaPlayer, what, extra);
+        }
         return true;
     }
 
