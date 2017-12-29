@@ -1,14 +1,19 @@
 package com.yan.ijkplayertest;
 
+import android.app.Activity;
+import android.app.Service;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.PointF;
+import android.media.AudioManager;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.util.ArrayMap;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -146,16 +151,66 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
         }
     }
 
-    private void onPanelControl(int touchStatus, float percent, boolean commit) {
+    /**
+     * 设置当前view亮度
+     *
+     * @param percentOffset 百分几偏移量
+     */
+    private void setLight(float percentOffset) {
+        if (getContext() instanceof Activity) {
+            Activity activity = (Activity) getContext();
+            WindowManager.LayoutParams lp = activity.getWindow().getAttributes();
+            if (lp.screenBrightness < 0) {
+                // 获取系统亮度
+                ContentResolver contentResolver = activity.getContentResolver();
+                try {
+                    lp.screenBrightness = Settings.System.getFloat(contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255;
+                } catch (Settings.SettingNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+            float brightness = (float) Math.min(percentOffset * 1.5 + lp.screenBrightness, 1F);
+            lp.screenBrightness = Math.max(brightness, 0);
+            activity.getWindow().setAttributes(lp);
+        }
+    }
+
+    /**
+     * 记录声音偏移量
+     */
+    private float volumeOffset;
+
+    /**
+     * @param percentOffset 百分比偏移量
+     * @param actionUp      点击事件是否为ACTION_UP
+     */
+    public void setVoice(float percentOffset, boolean actionUp) {
+        AudioManager audioManager = (AudioManager) getContext().getSystemService(Service.AUDIO_SERVICE);
+        final int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        final int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        volumeOffset += percentOffset * maxVolume * 4 / 3;
+        if (Math.abs(volumeOffset) > 1) {
+            if (volumeOffset > 0) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume + 1, 0);
+            } else {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume - 1, 0);
+            }
+            volumeOffset = 0;
+        }
+        if (actionUp) {
+            volumeOffset = 0;
+        }
+    }
+
+    private void onPanelControl(int touchStatus, float percentOffset, boolean commit) {
         switch (touchStatus) {
             case 1://进度
-                Log.e("onPanelControl", "onPanelControl:进度 " + percent + "   " + commit);
                 break;
             case 2://亮度
-                Log.e("onPanelControl", "onPanelControl:亮度 " + percent + "   " + commit);
+                setLight(percentOffset);
                 break;
             case 3://声音
-                Log.e("onPanelControl", "onPanelControl:声音 " + percent + "   " + commit);
+                setVoice(percentOffset, commit);
                 break;
         }
     }
@@ -211,7 +266,8 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
 
     private PointF lastTouchPoint = new PointF();
     private int touchStatus; // 1:进度 2:亮度 3:声音
-    private float percent;
+    private float percentOffset;
+    private float lastPercent;
     private boolean breakTouchMoving;
 
     @Override
@@ -230,13 +286,14 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
                 }
 
                 if (touchStatus != 0) {
-
+                    final float percent;
                     if (touchStatus == 1) {
                         percent = ((event.getX() - lastTouchPoint.x + 0.5F)) / getWidth();
                     } else {
                         percent = (lastTouchPoint.y - event.getY() + 0.5F) / getHeight();
                     }
-                    onPanelControl(touchStatus, percent, false);
+                    onPanelControl(touchStatus, percentOffset = percent - lastPercent, false);
+                    lastPercent = percent;
                     break;
                 }
                 if (Math.sqrt((event.getX() - lastTouchPoint.x) * (event.getX() - lastTouchPoint.x) + (event.getY() - lastTouchPoint.y) * (event.getY() - lastTouchPoint.y)) > edgeSlop) {
@@ -262,10 +319,17 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                onPanelControl(touchStatus, percent, touchStatus != 0);
+                final boolean isMovingTrigger = touchStatus != 0;
+
+                onPanelControl(touchStatus, percentOffset, isMovingTrigger);
 
                 breakTouchMoving = false;
+                lastPercent = 0;
                 touchStatus = 0;
+
+                if (isMovingTrigger) {
+                    return false;
+                }
 
                 playPauseTrigger(System.currentTimeMillis() - lastTime < TOUCH_DURING);
                 lastTime = System.currentTimeMillis();
@@ -274,5 +338,4 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
 
         return true;
     }
-
 }
