@@ -212,7 +212,7 @@ public class ControlPanelView extends FrameLayout implements IJKOnInflateCallbac
 
     private PointF lastTouchPoint = new PointF();
     private int touchStatus; // 1:进度 2:亮度 3:声音
-    private float percent; // 1:进度 2:亮度 3:声音
+    private float percent;
     private boolean breakTouchMoving;
 
     @Override
