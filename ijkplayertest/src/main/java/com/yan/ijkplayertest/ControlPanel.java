@@ -337,6 +337,7 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
                     break;
                 case IMediaPlayer.MEDIA_INFO_BUFFERING_END:
                 case IMediaPlayer.MEDIA_INFO_MEDIA_ACCURATE_SEEK_COMPLETE:
+                    showPanel(true);
                     progressUpdateTrigger(true);
                     break;
             }
@@ -423,15 +424,14 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
                     break;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    final boolean isMoved = touchStatus != 0;
+                    final int tempTs = touchStatus;
                     onPanelControl(touchStatus, percent, 3);
 
                     breakTouchMoving = false;
                     percent = 0;
                     touchStatus = 0;
 
-                    if (isMoved) {
-                        showPanel(true);
+                    if (tempTs != 0) {
                         return false;
                     }
 
