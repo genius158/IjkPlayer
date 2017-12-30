@@ -164,8 +164,8 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
             showPanel(true);
         } else {
             ijkVideoPlayer.start();
-            showPanel(true, 50);
-            progressUpdateTrigger(true);
+            showPanel(true, 100);
+            progressUpdateTrigger(true, 100);
         }
     }
 
@@ -293,6 +293,15 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
             setVisibility(GONE);
         }
     };
+
+    private void progressUpdateTrigger(final boolean trigger, long delay) {
+        ijkVideoPlayer.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                progressUpdateTrigger(trigger);
+            }
+        }, delay);
+    }
 
     private void progressUpdateTrigger(boolean trigger) {
         if (trigger) {
