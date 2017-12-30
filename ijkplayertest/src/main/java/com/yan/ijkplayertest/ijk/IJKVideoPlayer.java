@@ -53,6 +53,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     private ObjectAnimator rotationAnimator;
 
     private String videoPath;
+    private boolean isLive;
 
     private Context context;
 
@@ -88,7 +89,23 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         ijkMediaPlayer.native_setLogLevel(IjkMediaPlayer.IJK_LOG_DEBUG);
 
         ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 1);
-        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "enable-accurate-seek", 1);
+
+        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "probesize", 1024 * 16);
+        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "analyzeduration", 50000);
+        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 0);
+        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_frame", 0);
+        if (isLive) {
+            // Param for living
+            ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max_cached_duration", 3000);
+            ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "infbuf", 1);
+            ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "packet-buffering", 0);
+        } else {
+            // Param for playback
+            ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "enable-accurate-seek", 1);
+            ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max_cached_duration", 0);
+            ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "infbuf", 0);
+            ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "packet-buffering", 1);
+        }
 
         mediaPlayer = ijkMediaPlayer;
         mediaPlayer.setSurface(surface);
@@ -331,7 +348,8 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     /**
      * @param path the path of the video.
      */
-    public void setVideoPath(String path) {
+    public void setVideoPath(String path, boolean isLive) {
+        this.isLive = isLive;
         if (videoPath == null) {
             //first play
             videoPath = path;

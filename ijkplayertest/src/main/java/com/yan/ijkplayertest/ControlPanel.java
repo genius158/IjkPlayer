@@ -110,7 +110,8 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
             case R.id.tv_next:
                 for (int i = 0; i < urls.length; i++) {
                     if (urls[i].equals(currentUrl)) {
-                        ijkVideoPlayer.setVideoPath(currentUrl = urls[++i % urls.length]);
+                        int urlIndex = ++i % urls.length;
+                        ijkVideoPlayer.setVideoPath(currentUrl = urls[urlIndex], urlIndex != 2);
                         break;
                     }
                 }
@@ -307,7 +308,6 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
     private final Runnable progressUpdate = new Runnable() {
         @Override
         public void run() {
-            Log.e("progressUpdate", "run: progressUpdate  ");
             if (updateProgress()) {
                 ijkVideoPlayer.postDelayed(this, 500);
             }
@@ -340,7 +340,7 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
     public void onStateChanged(LifecycleOwner source, Lifecycle.Event event) {
         switch (event) {
             case ON_CREATE:
-                ijkVideoPlayer.setVideoPath(currentUrl);
+                ijkVideoPlayer.setVideoPath(currentUrl, !currentUrl.equals(urls[2]));
                 break;
             case ON_PAUSE:
                 ijkVideoPlayer.removeCallbacks(asynHide);
