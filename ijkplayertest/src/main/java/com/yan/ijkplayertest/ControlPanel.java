@@ -18,6 +18,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.yan.ijkplayertest.ijk.IJKCallbacksAdapter;
@@ -47,12 +48,17 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
 
     private final ArrayMap<IJKVideoRatio, String> arrayMap = new ArrayMap<>();
 
+    private final TouchEventDell touchEventDell;
+
     private final IJKVideoPlayer ijkVideoPlayer;
     private View vBottom;
+    private SeekBar sbProgress;
     private TextView tvScale;
     private TextView tvRatio;
 
     private Context context;
+
+    private float controlFirstValue;
 
     public static ControlPanel attach(IJKVideoPlayer ijkVideoPlayer) {
         return new ControlPanel(ijkVideoPlayer);
@@ -64,7 +70,7 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
         this.ijkVideoPlayer.setListener(ijkCallbacksAdapter);
         context = ijkVideoPlayer.getContext();
 
-        edgeSlop = ViewConfiguration.get(context).getScaledEdgeSlop();
+        touchEventDell = new TouchEventDell();
 
         arrayMap.put(IJKVideoRatio.RATIO_FILL, context.getResources().getString(R.string.ratio_full));
         arrayMap.put(IJKVideoRatio.RATIO_ADAPTER, context.getResources().getString(R.string.ratio_adapter));
@@ -80,6 +86,8 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
 
         tvRatio = vBottom.findViewById(R.id.tv_ratio);
         tvRatio.setOnClickListener(this);
+
+        sbProgress = vBottom.findViewById(R.id.sb_progress);
     }
 
     @Override
@@ -118,21 +126,25 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
         ijkVideoPlayer.postDelayed(new Runnable() {
             @Override
             public void run() {
-                ijkVideoPlayer.removeCallbacks(asynHide);
-                if (isShow) {
-                    setVisibility(VISIBLE);
-                    if (ijkVideoPlayer.isPlaying()) {
-                        ijkVideoPlayer.postDelayed(asynHide, DURING);
-                    }
-                } else if (ijkVideoPlayer.isPlaying()) {
-                    setVisibility(GONE);
-                }
+                showPanel(isShow);
             }
         }, delay);
     }
 
-    private void showPanel(final boolean isShow) {
-        showPanel(isShow, 0);
+    private void showPanel(boolean isShow) {
+        showPanel(isShow, true);
+    }
+
+    private void showPanel(boolean isShow, boolean withDelayHide) {
+        ijkVideoPlayer.removeCallbacks(asynHide);
+        if (isShow) {
+            setVisibility(VISIBLE);
+            if (withDelayHide && ijkVideoPlayer.isPlaying()) {
+                ijkVideoPlayer.postDelayed(asynHide, DURING);
+            }
+        } else if (ijkVideoPlayer.isPlaying()) {
+            setVisibility(GONE);
+        }
     }
 
     private void textFullSmallTrigger() {
@@ -165,16 +177,25 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
         vBottom.setVisibility(visibility);
     }
 
-    public int getVisibility() {
+    private int getVisibility() {
         return vBottom.getVisibility();
+    }
+
+    private void setProgress(float progress, int actionStatus) {
+        if (actionStatus == 1) {
+            controlFirstValue = sbProgress.getProgress();
+            return;
+        }
+        float seekDuring = progress * ijkVideoPlayer.getDuration();
+        sbProgress.setProgress((int) (controlFirstValue + progress * 100));
     }
 
     /**
      * 设置当前view亮度
      *
-     * @param percentOffset 百分几偏移量
+     * @param percent 百分比
      */
-    private void setLight(float percentOffset) {
+    private void setLight(float percent, int actionStatus) {
         if (context instanceof Activity) {
             Activity activity = (Activity) context;
             WindowManager.LayoutParams lp = activity.getWindow().getAttributes();
@@ -187,133 +208,58 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
                     e.printStackTrace();
                 }
             }
-            float brightness = (float) Math.min(percentOffset * 1.5 + lp.screenBrightness, 1F);
+            if (actionStatus == 1) {
+                controlFirstValue = lp.screenBrightness;
+                return;
+            }
+
+            float brightness = (float) Math.min(percent * 1.5 + controlFirstValue, 1F);
             lp.screenBrightness = Math.max(brightness, 0);
             activity.getWindow().setAttributes(lp);
         }
     }
 
     /**
-     * 记录声音偏移量
+     * @param percent      百分比
+     * @param actionStatus 触屏事件
      */
-    private float volumeOffset;
-
-    /**
-     * @param percentOffset 百分比偏移量
-     * @param actionUp      点击事件是否为ACTION_UP
-     */
-    public void setVoice(float percentOffset, boolean actionUp) {
+    public void setVoice(float percent, int actionStatus) {
         AudioManager audioManager = (AudioManager) context.getSystemService(Service.AUDIO_SERVICE);
-        final int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         final int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-        volumeOffset += percentOffset * maxVolume * 4 / 3;
+        if (actionStatus == 1) {
+            controlFirstValue = percent;
+            return;
+        }
+        final int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        final float volumeOffset = (percent - controlFirstValue) * maxVolume * 4 / 3;
         if (Math.abs(volumeOffset) > 1) {
             if (volumeOffset > 0) {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume + 1, 0);
             } else {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume - 1, 0);
             }
-            volumeOffset = 0;
-        }
-        if (actionUp) {
-            volumeOffset = 0;
+            controlFirstValue = percent;
         }
     }
 
-    private void onPanelControl(int touchStatus, float percentOffset, boolean actionUp) {
+    private void onPanelControl(int touchStatus, float percent, int actionStatus) {
         switch (touchStatus) {
             case 1://进度
+                setProgress(percent, actionStatus);
                 break;
             case 2://亮度
-                setLight(percentOffset);
+                setLight(percent, actionStatus);
                 break;
             case 3://声音
-                setVoice(percentOffset, actionUp);
+                setVoice(percent, actionStatus);
                 break;
         }
     }
-
-
-    //------------------------ START touch event dell part ---------------------------
-    private float edgeSlop;
-    private static final long TOUCH_DURING = 500;
-    private long lastTime;
-
-    private PointF lastTouchPoint = new PointF();
-    private int touchStatus; // 1:进度 2:亮度 3:声音
-    private float percentOffset;
-    private float lastPercent;
-    private boolean breakTouchMoving;
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        if (ijkVideoPlayer == null) {
-            return false;
-        }
-
-        switch (event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
-                lastTouchPoint.set(event.getX(), event.getY());
-                break;
-            case MotionEvent.ACTION_MOVE:
-                if (breakTouchMoving) {
-                    break;
-                }
-
-                if (touchStatus != 0) {
-                    final float percent;
-                    if (touchStatus == 1) {
-                        percent = ((event.getX() - lastTouchPoint.x + 0.5F)) / ijkVideoPlayer.getWidth();
-                    } else {
-                        percent = (lastTouchPoint.y - event.getY() + 0.5F) / ijkVideoPlayer.getHeight();
-                    }
-                    onPanelControl(touchStatus, percentOffset = percent - lastPercent, false);
-                    lastPercent = percent;
-                    break;
-                }
-                if (Math.sqrt((event.getX() - lastTouchPoint.x) * (event.getX() - lastTouchPoint.x) + (event.getY() - lastTouchPoint.y) * (event.getY() - lastTouchPoint.y)) > edgeSlop) {
-                    if (ijkVideoPlayer.getParent() != null) {
-                        ijkVideoPlayer.getParent().requestDisallowInterceptTouchEvent(true);
-                    }
-                    if (Math.abs(event.getX() - lastTouchPoint.x) > Math.abs(event.getY() - lastTouchPoint.y)) {
-                        touchStatus = 1;
-                    } else {
-                        if (event.getX() < ijkVideoPlayer.getWidth() / 3) {
-                            touchStatus = 2;
-                        } else if (event.getX() > ijkVideoPlayer.getWidth() * 2 / 3) {
-                            touchStatus = 3;
-                        } else {
-                            touchStatus = 1;
-                        }
-                    }
-                    lastTouchPoint.set(event.getX(), event.getY());
-                }
-                break;
-            case MotionEvent.ACTION_POINTER_DOWN:
-                breakTouchMoving = true;
-                break;
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
-                final boolean isMovingTrigger = touchStatus != 0;
-
-                onPanelControl(touchStatus, percentOffset, isMovingTrigger);
-
-                breakTouchMoving = false;
-                lastPercent = 0;
-                touchStatus = 0;
-
-                if (isMovingTrigger) {
-                    return false;
-                }
-
-                playPauseTrigger(System.currentTimeMillis() - lastTime < TOUCH_DURING);
-                lastTime = System.currentTimeMillis();
-                break;
-        }
-
-        return true;
+        return touchEventDell.onTouch(v, event);
     }
-    //------------------------ END touch event dell part ---------------------------
 
     @Override
     public void onConfigurationChanged() {
@@ -351,4 +297,88 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
                 break;
         }
     }
+
+    private class TouchEventDell implements View.OnTouchListener {
+        private final float edgeSlop;
+        private static final long TOUCH_DURING = 200;
+        private long lastTime;
+
+        private PointF lastTouchPoint = new PointF();
+        private int touchStatus; // 1:进度 2:亮度 3:声音
+        private float percent;
+        private boolean breakTouchMoving;
+
+        TouchEventDell() {
+            edgeSlop = ViewConfiguration.get(context).getScaledEdgeSlop();
+        }
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if (ijkVideoPlayer == null) {
+                return false;
+            }
+
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    lastTouchPoint.set(event.getX(), event.getY());
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    if (breakTouchMoving) {
+                        break;
+                    }
+                    if (touchStatus != 0) {
+                        if (touchStatus == 1) {
+                            percent = (event.getX() - lastTouchPoint.x) / ijkVideoPlayer.getWidth();
+                        } else {
+                            percent = (lastTouchPoint.y - event.getY()) / ijkVideoPlayer.getHeight();
+                        }
+                        onPanelControl(touchStatus, percent, 2);
+                        break;
+                    }
+                    if (Math.sqrt((event.getX() - lastTouchPoint.x) * (event.getX() - lastTouchPoint.x) + (event.getY() - lastTouchPoint.y) * (event.getY() - lastTouchPoint.y)) > edgeSlop) {
+                        if (ijkVideoPlayer.getParent() != null) {
+                            ijkVideoPlayer.getParent().requestDisallowInterceptTouchEvent(true);
+                        }
+                        if (Math.abs(event.getX() - lastTouchPoint.x) > Math.abs(event.getY() - lastTouchPoint.y)) {
+                            touchStatus = 1;
+                            showPanel(true, false);
+                            ijkVideoPlayer.removeCallbacks(asynHide);
+                        } else {
+                            if (event.getX() < ijkVideoPlayer.getWidth() / 3) {
+                                touchStatus = 2;
+                            } else if (event.getX() > ijkVideoPlayer.getWidth() * 2 / 3) {
+                                touchStatus = 3;
+                            } else {
+                                touchStatus = 1;
+                            }
+                        }
+                        lastTouchPoint.set(event.getX(), event.getY());
+                        onPanelControl(touchStatus, percent, 1);
+                    }
+                    break;
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    breakTouchMoving = true;
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    final boolean isMoved = touchStatus != 0;
+                    onPanelControl(touchStatus, percent, 3);
+
+                    breakTouchMoving = false;
+                    percent = 0;
+                    touchStatus = 0;
+
+                    if (isMoved) {
+                        showPanel(true);
+                        return false;
+                    }
+
+                    playPauseTrigger(System.currentTimeMillis() - lastTime < TOUCH_DURING);
+                    lastTime = System.currentTimeMillis();
+                    break;
+            }
+            return true;
+        }
+    }
+
 }

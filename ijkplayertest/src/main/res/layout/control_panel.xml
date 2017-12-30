@@ -6,14 +6,21 @@
     android:layout_gravity="bottom"
     android:background="#8e000000"
     android:clickable="true"
-    android:gravity="end"
+    android:gravity="center"
     android:orientation="horizontal">
+
+    <SeekBar
+        android:id="@+id/sb_progress"
+        android:layout_width="0dp"
+        android:layout_height="4dp"
+        android:layout_weight="1"
+        android:progress="100" />
 
     <TextView
         android:id="@+id/tv_ratio"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="10dp"
+        android:padding="6dp"
         android:text="@string/ratio_full"
         android:textColor="#ffffff"
         android:textSize="15sp" />
@@ -28,7 +35,7 @@
         android:id="@+id/tv_next"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="10dp"
+        android:padding="6dp"
         android:text="@string/next"
         android:textColor="#ffffff"
         android:textSize="15sp" />
@@ -43,7 +50,7 @@
         android:id="@+id/tv_scale"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="10dp"
+        android:padding="6dp"
         android:text="@string/all_screen"
         android:textColor="#ffffff"
         android:textSize="15sp" />
