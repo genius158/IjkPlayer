@@ -37,7 +37,7 @@ import static android.view.View.VISIBLE;
  * Created by yan on 2017/12/27 0027
  */
 
-public class ControlPanel implements GenericLifecycleObserver, IJKOnConfigurationChanged, View.OnClickListener, View.OnTouchListener {
+public class ControlPanel implements GenericLifecycleObserver, IJKOnConfigurationChanged, View.OnClickListener, View.OnTouchListener, SeekBar.OnSeekBarChangeListener {
     private static final String[] urls = new String[]{
             "http://183.252.176.25//PLTV/88888888/224/3221225925/index.m3u8"
             , "http://183.252.176.51//PLTV/88888888/224/3221225926/index.m3u8"
@@ -89,6 +89,7 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
         tvRatio.setOnClickListener(this);
 
         sbProgress = vBottom.findViewById(R.id.sb_progress);
+        sbProgress.setOnSeekBarChangeListener(this);
     }
 
     @Override
@@ -359,6 +360,27 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
                 source.getLifecycle().removeObserver(this);
                 break;
         }
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+        showPanel(true, false);
+        progressUpdateTrigger(false);
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        final long maxDuring = ijkVideoPlayer.getDuration();
+        if (maxDuring == 0) {
+            return;
+        }
+
+        ijkVideoPlayer.seekTo((long) (seekBar.getProgress() / 100F * maxDuring + 0.5F));
     }
 
     private class TouchEventDell implements View.OnTouchListener {
