@@ -23,8 +23,6 @@ import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 
-import com.yan.ijkplayertest.ControlPanelView;
-
 import java.io.IOException;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
@@ -41,8 +39,6 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
 
     private TextureView textureView;
     private Surface surface;
-
-    private IJKOnConfigurationChanged ijkOnConfigurationChanged;
 
     private int videoWidth;
     private int videoHeight;
@@ -237,10 +233,11 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         layoutParams.height = isScreenPortrait ? -2 : -1;
         setLayoutParams(layoutParams);
 
-        if (ijkOnConfigurationChanged != null) {
-            ijkOnConfigurationChanged.onConfigurationChanged();
+        for (int i = 0; i < getChildCount(); i++) {
+            if (getChildAt(i) instanceof IJKOnConfigurationChanged) {
+                ((IJKOnConfigurationChanged) getChildAt(i)).onConfigurationChanged();
+            }
         }
-
     }
 
     private void screenRatioTrigger(boolean isScreenPortrait) {
@@ -363,12 +360,11 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         }
     }
 
-    public void attachPanel(ControlPanelView controlPanelView) {
-        super.addView(controlPanelView);
-        if (controlPanelView instanceof IJKOnConfigurationChanged) {
-            ijkOnConfigurationChanged = controlPanelView;
+    public void attachPanel(View v) {
+        super.addView(v);
+        if (v instanceof IJKOnInflateCallback) {
+            ((IJKOnInflateCallback) v).onInflate(this);
         }
-        controlPanelView.onInflate(this, (LayoutParams) controlPanelView.getLayoutParams());
     }
 
     public void triggerOrientation() {

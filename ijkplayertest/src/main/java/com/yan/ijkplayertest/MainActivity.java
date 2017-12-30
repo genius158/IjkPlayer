@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ijkVideoPlayer = findViewById(R.id.ijk_player);
-        ijkVideoPlayer.attachPanel(new ControlPanelView(this));
+        getLifecycle().addObserver(ControlPanel.attach(ijkVideoPlayer));
 
         RecyclerView recyclerView = findViewById(R.id.rv);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));

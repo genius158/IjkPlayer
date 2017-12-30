@@ -7,5 +7,5 @@ import android.widget.FrameLayout;
  */
 
 public interface IJKOnInflateCallback {
-    void onInflate(IJKVideoPlayer ijkVideoPlayer, FrameLayout.LayoutParams layoutParams);
+    void onInflate(IJKVideoPlayer ijkVideoPlayer);
 }
