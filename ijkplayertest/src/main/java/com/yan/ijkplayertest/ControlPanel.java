@@ -41,6 +41,7 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
     private static final String[] urls = new String[]{
             "http://183.252.176.25//PLTV/88888888/224/3221225925/index.m3u8"
             , "http://183.252.176.51//PLTV/88888888/224/3221225926/index.m3u8"
+            , "http://flv2.bn.netease.com/videolib3/1604/28/fVobI0704/SD/fVobI0704-mobile.mp4"
     };
     private String currentUrl = urls[0];
 
@@ -158,10 +159,12 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
     private void playTrigger() {
         if (ijkVideoPlayer.isPlaying()) {
             ijkVideoPlayer.pause();
+            progressUpdateTrigger(false);
             showPanel(true);
         } else {
             ijkVideoPlayer.start();
             showPanel(true, 50);
+            progressUpdateTrigger(true);
         }
     }
 
@@ -182,12 +185,29 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
     }
 
     private void setProgress(float progress, int actionStatus) {
-        if (actionStatus == 1) {
-            controlFirstValue = sbProgress.getProgress();
+        if (ijkVideoPlayer.getDuration() == 0) {
             return;
         }
-        float seekDuring = progress * ijkVideoPlayer.getDuration();
-        sbProgress.setProgress((int) (controlFirstValue + progress * 100));
+        if (actionStatus == 1) {
+            progressUpdateTrigger(false);
+            return;
+        }
+        final long videoDuring = ijkVideoPlayer.getDuration();
+        final long change = (long) (progress * 90 * 1000);
+        long seekPosition = Math.min(change + ijkVideoPlayer.getCurrentPosition(), videoDuring);
+        seekPosition = Math.max(seekPosition, 0);
+        sbProgress.setProgress((int) (seekPosition * 100 / videoDuring + 0.5F));
+        if (actionStatus == 3) {
+            ijkVideoPlayer.seekTo(seekPosition);
+        }
+    }
+
+    private boolean updateProgress() {
+        if (ijkVideoPlayer.getDuration() == 0) {
+            return false;
+        }
+        sbProgress.setProgress((int) (ijkVideoPlayer.getCurrentPosition() * 100 / ijkVideoPlayer.getDuration() + 0.5F));
+        return true;
     }
 
     /**
@@ -223,7 +243,7 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
      * @param percent      百分比
      * @param actionStatus 触屏事件
      */
-    public void setVoice(float percent, int actionStatus) {
+    private void setVoice(float percent, int actionStatus) {
         AudioManager audioManager = (AudioManager) context.getSystemService(Service.AUDIO_SERVICE);
         final int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         if (actionStatus == 1) {
@@ -273,12 +293,45 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
         }
     };
 
+    private void progressUpdateTrigger(boolean trigger) {
+        if (trigger) {
+            if (ijkVideoPlayer.isPlaying()) {
+                ijkVideoPlayer.removeCallbacks(progressUpdate);
+                ijkVideoPlayer.post(progressUpdate);
+            }
+        } else {
+            ijkVideoPlayer.removeCallbacks(progressUpdate);
+        }
+    }
+
+    private final Runnable progressUpdate = new Runnable() {
+        @Override
+        public void run() {
+            Log.e("progressUpdate", "run: progressUpdate  ");
+            if (updateProgress()) {
+                ijkVideoPlayer.postDelayed(this, 500);
+            }
+        }
+    };
+
+
     private final IJKCallbacksAdapter ijkCallbacksAdapter = new IJKCallbacksAdapter() {
         @Override
         public boolean onInfo(IMediaPlayer iMediaPlayer, int i, int i1) {
-            if (i == 3) {// video start to play
-                showPanel(true);
+            switch (i) {
+                case IMediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
+                    progressUpdateTrigger(true);
+                    showPanel(true);
+                    break;
+                case IMediaPlayer.MEDIA_INFO_BUFFERING_START:
+                    progressUpdateTrigger(false);
+                    break;
+                case IMediaPlayer.MEDIA_INFO_BUFFERING_END:
+                case IMediaPlayer.MEDIA_INFO_MEDIA_ACCURATE_SEEK_COMPLETE:
+                    progressUpdateTrigger(true);
+                    break;
             }
+
             return super.onInfo(iMediaPlayer, i, i1);
         }
     };

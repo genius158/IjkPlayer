@@ -88,7 +88,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         ijkMediaPlayer.native_setLogLevel(IjkMediaPlayer.IJK_LOG_DEBUG);
 
         ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 1);
-        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 1);
+        ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "enable-accurate-seek", 1);
 
         mediaPlayer = ijkMediaPlayer;
         mediaPlayer.setSurface(surface);
@@ -303,7 +303,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
             if (rotationAnimator == null) {
                 rotationAnimator = ObjectAnimator.ofFloat(this, "rotation", getRotation(), orientationFlag * 10);
                 rotationAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
-                rotationAnimator.setDuration(250);
+                rotationAnimator.setDuration(300);
             } else {
                 rotationAnimator.setFloatValues(getRotation(), orientationFlag * 10);
             }
