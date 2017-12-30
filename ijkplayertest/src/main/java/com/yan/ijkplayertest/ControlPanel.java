@@ -41,7 +41,7 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
     private static final String[] urls = new String[]{
             "http://183.252.176.25//PLTV/88888888/224/3221225925/index.m3u8"
             , "http://183.252.176.51//PLTV/88888888/224/3221225926/index.m3u8"
-            , "http://flv2.bn.netease.com/videolib3/1604/28/fVobI0704/SD/fVobI0704-mobile.mp4"
+            , "http://111.1.50.18/mp4files/310000000613E568/clips.vorwaerts-gmbh.de/big_buck_bunny.mp4"
     };
     private String currentUrl = urls[0];
 
