@@ -402,10 +402,6 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
 
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-            if (ijkVideoPlayer == null) {
-                return false;
-            }
-
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
                     lastTouchPoint.set(event.getX(), event.getY());
