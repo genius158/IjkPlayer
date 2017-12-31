@@ -12,7 +12,6 @@ import android.graphics.PointF;
 import android.media.AudioManager;
 import android.provider.Settings;
 import android.support.v4.util.ArrayMap;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -112,7 +111,7 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
                 for (int i = 0; i < urls.length; i++) {
                     if (urls[i].equals(currentUrl)) {
                         int urlIndex = ++i % urls.length;
-                        ijkVideoPlayer.setVideoPath(currentUrl = urls[urlIndex], urlIndex != 2);
+                        ijkVideoPlayer.setVideoPath(currentUrl = urls[urlIndex], isCurrentUrlLiving());
                         break;
                     }
                 }
@@ -123,6 +122,10 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
                 break;
         }
         showPanel(true);
+    }
+
+    private boolean isCurrentUrlLiving() {
+        return !urls[2].equals(currentUrl);
     }
 
     private void showPanel(final boolean isShow, long delay) {
@@ -351,7 +354,7 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
     public void onStateChanged(LifecycleOwner source, Lifecycle.Event event) {
         switch (event) {
             case ON_CREATE:
-                ijkVideoPlayer.setVideoPath(currentUrl, !currentUrl.equals(urls[2]));
+                ijkVideoPlayer.setVideoPath(currentUrl, isCurrentUrlLiving());
                 break;
             case ON_PAUSE:
                 ijkVideoPlayer.removeCallbacks(asynHide);
@@ -454,6 +457,9 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
                     touchStatus = 0;
 
                     if (tempTs != 0) {
+                        if (isCurrentUrlLiving()) {
+                            showPanel(true);
+                        }
                         return false;
                     }
 
