@@ -378,7 +378,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     @Override
     public final void addView(View child) {
         try {
-            throw new Exception("this method can not be use");
+            throw new Exception("can not call this method");
         } catch (Exception e) {
             e.printStackTrace();
         }
