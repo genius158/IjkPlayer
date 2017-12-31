@@ -14,13 +14,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 
 import java.io.IOException;
@@ -50,9 +48,6 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     private IJKVideoRatio ijkVideoRatio = IJKVideoRatio.RATIO_FILL;
 
     private IJKCallbacksAdapter listener;
-
-    private OrientationEventListener orientationListener;
-    private ObjectAnimator rotationAnimator;
 
     private String videoPath;
     private boolean isLive;
@@ -243,14 +238,6 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         toolBarShowTrigger(isScreenPortrait);
         notifyBarModeTrigger(isScreenPortrait);
 
-        //rotation listener set part
-        if (isScreenPortrait) {
-            resetSurfaceRotation();
-        } else {
-            readyOrientationListener();
-        }
-        orientationListenerTrigger(isScreenPortrait);
-
         ViewGroup.LayoutParams layoutParams = getLayoutParams();
         layoutParams.height = isScreenPortrait ? -2 : -1;
         setLayoutParams(layoutParams);
@@ -290,55 +277,6 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
             getActivity().getWindow().setAttributes(attr);
             getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
         }
-    }
-
-    private void readyOrientationListener() {
-        if (orientationListener == null) {
-            orientationListener = new OrientationEventListener(context, SensorManager.SENSOR_DELAY_NORMAL) {
-                @Override
-                public void onOrientationChanged(int orientation) {
-                    surfaceRotation(orientation + 5);
-                }
-            };
-        }
-    }
-
-    private void orientationListenerTrigger(boolean disable) {
-        if (orientationListener != null) {
-            if (disable) {
-                orientationListener.disable();
-                return;
-            }
-            if (isScreenPortrait()) {
-                orientationListener.disable();
-            } else {
-                orientationListener.enable();
-            }
-        }
-    }
-
-    private void surfaceRotation(int orientation) {
-        if ((rotationAnimator != null && rotationAnimator.isRunning()) || textureView == null || orientation == -1) {
-            return;
-        }
-        final int orientationFlag = 27 - orientation / 10;
-        if ((orientationFlag == 0 || orientationFlag == 18) && getRotation() != orientationFlag * 10) {
-            if (rotationAnimator == null) {
-                rotationAnimator = ObjectAnimator.ofFloat(this, "rotation", getRotation(), orientationFlag * 10);
-                rotationAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
-                rotationAnimator.setDuration(300);
-            } else {
-                rotationAnimator.setFloatValues(getRotation(), orientationFlag * 10);
-            }
-            rotationAnimator.start();
-        }
-    }
-
-    private void resetSurfaceRotation() {
-        if (rotationAnimator != null && rotationAnimator.isRunning()) {
-            rotationAnimator.cancel();
-        }
-        setRotation(0);
     }
 
     private Activity getActivity() {
@@ -406,7 +344,7 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
             return;
         }
         if (isScreenPortrait()) {
-            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         } else {
             getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
@@ -486,7 +424,6 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
         Log.e(TAG, "onSurfaceTextureAvailable: ");
         surface = new Surface(surfaceTexture);
-        orientationListenerTrigger(false);
         loadVideo();
     }
 
@@ -499,7 +436,6 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
         Log.e(TAG, "onSurfaceTextureDestroyed: ");
         mediaRelease();
-        orientationListenerTrigger(true);
         return true;
     }
 
