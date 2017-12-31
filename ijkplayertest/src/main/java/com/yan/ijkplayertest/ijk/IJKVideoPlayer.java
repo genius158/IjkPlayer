@@ -255,11 +255,6 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         layoutParams.height = isScreenPortrait ? -2 : -1;
         setLayoutParams(layoutParams);
 
-        for (int i = 0; i < getChildCount(); i++) {
-            if ((getChildAt(i) instanceof IJKOnConfigurationChanged)) {
-                ((IJKOnConfigurationChanged) getChildAt(i)).onConfigurationChanged();
-            }
-        }
         if (configurationChangeds == null) {
             return;
         }
@@ -393,6 +388,9 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         super.addView(v);
         if (v instanceof IJKOnInflateCallback) {
             ((IJKOnInflateCallback) v).onInflate(this);
+        }
+        if (v instanceof IJKOnConfigurationChanged) {
+            addConfigurationChanged((IJKOnConfigurationChanged) v);
         }
     }
 
