@@ -68,6 +68,7 @@ public class ControlPanel implements GenericLifecycleObserver, IJKOnConfiguratio
         this.ijkVideoPlayer = ijkVideoPlayer;
         this.ijkVideoPlayer.setOnTouchListener(this);
         this.ijkVideoPlayer.setListener(ijkCallbacksAdapter);
+        this.ijkVideoPlayer.addConfigurationChanged(this);
         context = ijkVideoPlayer.getContext();
 
         touchEventDell = new TouchEventDell();

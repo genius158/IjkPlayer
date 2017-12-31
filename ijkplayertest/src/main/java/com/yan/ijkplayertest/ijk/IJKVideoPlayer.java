@@ -24,6 +24,8 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -56,6 +58,8 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
     private boolean isLive;
 
     private Context context;
+
+    private List<IJKOnConfigurationChanged> configurationChangeds;
 
 
     public IJKVideoPlayer(@NonNull Context context) {
@@ -252,9 +256,15 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         setLayoutParams(layoutParams);
 
         for (int i = 0; i < getChildCount(); i++) {
-            if (getChildAt(i) instanceof IJKOnConfigurationChanged) {
+            if ((getChildAt(i) instanceof IJKOnConfigurationChanged)) {
                 ((IJKOnConfigurationChanged) getChildAt(i)).onConfigurationChanged();
             }
+        }
+        if (configurationChangeds == null) {
+            return;
+        }
+        for (IJKOnConfigurationChanged configurationChanged : configurationChangeds) {
+            configurationChanged.onConfigurationChanged();
         }
     }
 
@@ -384,6 +394,13 @@ public class IJKVideoPlayer extends FrameLayout implements TextureView.SurfaceTe
         if (v instanceof IJKOnInflateCallback) {
             ((IJKOnInflateCallback) v).onInflate(this);
         }
+    }
+
+    public void addConfigurationChanged(IJKOnConfigurationChanged onConfigurationChanged) {
+        if (configurationChangeds == null) {
+            configurationChangeds = new ArrayList<>();
+        }
+        configurationChangeds.add(onConfigurationChanged);
     }
 
     public void triggerOrientation() {
